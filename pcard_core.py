@@ -27,7 +27,7 @@ QUERY_TIMEOUT_S = 15       # abort runaway queries
 
 # Fallback chain for the Gemini API (lecture 6: retry, then move to the next model).
 # The first entry can be overridden with the GEMINI_MODEL secret.
-DEFAULT_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"]
+DEFAULT_MODELS = ["gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-lite-latest"]
 
 SCHEMA_TEXT = """\
 Year INTEGER            -- year of TransactionDate (2010-2014)
@@ -244,7 +244,7 @@ def ask_gemini(question: str, year: int, api_key: str, models: list[str] | None 
                     config=types.GenerateContentConfig(
                         response_mime_type="application/json",
                         temperature=0,
-                        max_output_tokens=1024,
+                        max_output_tokens=4096,
                     ),
                 )
                 sql, explanation = parse_llm_json(resp.text)
@@ -259,7 +259,7 @@ def ask_gemini(question: str, year: int, api_key: str, models: list[str] | None 
                 msg = str(exc).lower()
                 if "api key" in msg or "permission" in msg or "unauthenticated" in msg:
                     raise RuntimeError("Gemini rejected the API key.") from exc
-                if "not found" in msg or "404" in msg:
-                    break  # model name unavailable -> next model immediately
+                if "not found" in msg or "404" in msg or "resource_exhausted" in msg or "429" in msg:
+                    break  # model unavailable or its quota is used up -> next model immediately
                 time.sleep(1.5 * (attempt + 1))
     raise RuntimeError("No Gemini model returned a valid response:\n" + "\n".join(attempts))
