@@ -1,0 +1,10 @@
+# secrets - never commit
+.env
+.env.*
+.streamlit/secrets.toml
+# decompressed database (created on first start from data/pcards.db.gz)
+data/pcards.db
+data/pcards.tmp
+__pycache__/
+.pytest_cache/
+.venv/
